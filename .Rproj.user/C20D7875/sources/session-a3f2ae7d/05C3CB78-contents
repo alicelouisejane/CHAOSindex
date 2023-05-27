@@ -1,0 +1,363 @@
+---
+title: "CGM forecast with multiple ARIMAs, stepping forward 30 min"
+author: "Stephanie Hanna Peter Taylor"
+date: "21/07/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+READ ME!
+line 29- check English/American format
+lines 71-82 - are set up for data in 5 minute increments and would need recalculating for 15 minutes. the periodicity of the day is important so all would need altering
+
+line 99+ 222-233 loopy3<-loopy2[i]+10 is currently prediciting 10 steps ahead i.e. every 5 minutes for 50 minutes or every 15 minutes for 150 minutes. either change this or just select the relevant times later. I've added date and timestamps to the output to help you .
+
+```{r}
+#install.packages("forecast")
+library (ggplot2)
+library(tidyr)
+library(readr)
+library(forecast)
+library(dplyr)
+setwd("~/Desktop/USTEKID CGM ML/bin")
+#setwd("C:/Users/wmdsjh/OneDrive - Cardiff University/analysed data/R/cgm/bin")
+
+#BDataCGM <- read_csv("~/Desktop/USTEKID CGM ML/in/1105.csv")
+#extra code to read in date time correctly
+BDataCGM <- read_csv("../in/1105.csv",  col_types = cols(`Device Timestamp` = col_datetime(format = "%d/%m/%Y %H:%M")))
+#BDataCGM2 <- read_delim("../in/BDataCGM.txt" ,delim = "|", escape_double = FALSE, trim_ws = TRUE)
+#rename the Device column to PtID
+BDataCGM$PtID<-BDataCGM$Device
+#rename historic
+BDataCGM$Glucose <-BDataCGM$`Historic Glucose mmol/L`
+#separate to make days from enroll and time
+BDataCGM<-separate(
+ BDataCGM,
+  `Device Timestamp`,
+  c("DeviceDaysFromEnroll", "DeviceTm"),
+  sep = " (?=[^ ]+$)",
+  remove = TRUE,
+)
+#there were other records without cgm
+BDataCGM2<-subset( BDataCGM, `Record Type` == 0 ) 
+
+
+```
+
+
+```{r}
+list_df <- split(BDataCGM2, BDataCGM2$PtID)
+
+```
+
+
+```{r}
+
+#a shortversion to play with variables
+short_list_df<- list_df[c(1)]
+#K<-3
+#x<-vector("list",K)
+B<-c(1)
+for (j in seq_along(B)){
+  #insert all the code below into the loop that loops over the patient IDs. This is for a single patient to get multiple forecasts from #their dataset, inching along by half an hour each time
+
+#make an empty list to put things in
+#we are going to do 48 measurements (i.e. every half hour for 24 hours between day 3 and 4)
+N<-48
+x<-vector("list",N)
+
+#288 lots of 5 minutes in a day
+foo <- 1:288
+z <- 0
+
+#make a vector of every 6th 5 minute, i.e. every half hour starting from half an hour into the series
+loopy<- foo[1:(z+6)==(z+6)]
+
+# every 5 minute between day 3 and 4
+foo2 <- 864:1152
+z <- 0
+#make a vector of every 6th 5 minute, i.e. every half hour between day 3 and 4
+loopy2<- foo2[1:(z+6)==(z+6)]
+#define test_p
+test_p <- short_list_df[[j]] 
+first_plot<-auto.arima(test_p$Glucose, trace=TRUE)
+#needs to hve right periodicity i.e. there are 288 lots of 5minutes in a day
+#take first 288 records
+#need to sort by record id
+test_p$DeviceDaysFromEnroll
+test_p <- test_p[order(test_p$DeviceDaysFromEnroll,test_p$DeviceTm),] 
+
+#make a loop
+for (i in 1:length(loopy)){
+
+# the section of the dataset we are going to use is 1.  starting from half an hour in and running to 3 days then 2. From an hour in #to (3days+half an hour) etc…
+test_p_3<- test_p[c(loopy[i]:loopy2[i]),]
+
+
+loopy3<-loopy2[i]+18
+#this one to compare
+
+test_p_3_plus<-test_p[c(loopy[i]:loopy3),]
+#make a time series 
+my1 <- ts(test_p_3$Glucose)
+my2<-ts(test_p_3_plus$Glucose)
+#step here to chop the data to three days
+###
+#do this step on the three days two hours ahead, with a confidence interval
+fit_basic1<- auto.arima(test_p_3$Glucose)
+forecast_1<-forecast(fit_basic1,18)
+#now the plot needs to be three days+ 50 minutes withthe prediction overlaid with confidence interval
+autoplot(my1,main = 'CGM',xlab = 'Time',ylab = 'Glucose')+
+  autolayer(forecast_1, "prediction")
+autoplot(my2,main = 'CGM',xlab = 'Time',ylab = 'Glucose')
+#CHECK THIS
+#changed to match new form
+#added date and time
+real<- test_p_3_plus[c(865:882),c(3,4,22)]
+predict_mean<-forecast_1$mean[1:18]
+predict_upper<-forecast_1$upper[1:18]
+predict_lower<-forecast_1$lower[1:18]
+res<-cbind(real,predict_mean, predict_lower,predict_upper)
+x[[i]]<-res
+
+#close the loop AFTER you have done your arima
+}
+p<-x
+p<-p[c(1:200)]
+names(p) =names(short_list_df)
+easy_answer<- bind_rows(p, .id = "ARIMA number")
+
+easy_answer$predicted_time<-c(1:18)
+#write.csv(easy_answer, "../out/i basic_cgm_predictions_multi_arima.csv")
+ write.csv(easy_answer,  paste0("../out/", names(short_list_df[j]), "basic_cgm_predictions_multi_arimae.csv"))
+}
+  
+  
+```
+
+
+## take care with the numbering of patients
+```{r}
+#working except there are 200 patients labelled up to 203, need to find the 3 missing ones 126,183,194
+N<-200
+x<-vector("list",N)
+B<-c(1:200)
+for (i in seq_along(B)){
+test_p <- list_df[[i]] 
+
+#needs to hve right periodicity i.e. there are 288 lots of 5minutes in a day
+#take first 288 records
+#need to sort by record id
+
+test_p <- test_p[order(test_p$DeviceDaysFromEnroll,test_p$DeviceTm),] 
+#this one to predict from 3 day
+test_p_3<- test_p[c(1:864),]
+#this one to compare
+test_p_3_plus<-test_p[c(1:874),]
+#make a time series with frequency 288
+my1 <- ts(test_p_3$Glucose)
+my2<-ts(test_p_3_plus$Glucose)
+#step here to chop the data to three days
+###
+#do this step on the three days two hours ahead, with a confidence interval
+fit_basic1<- auto.arima(test_p_3$Glucose)
+forecast_1<-forecast(fit_basic1)
+#now the plot needs to be three days+ 50 minutes withthe prediction overlaid with confidence interval
+#watch the names in case they are wrong
+autoplot(my1,main = i,xlab = 'Time',ylab = 'Glucose')+
+  autolayer(forecast_1, "prediction")
+ggsave(filename=paste("../out/predict ",i,".jpg",sep=""))
+autoplot(my2,main = i,xlab = 'Time',ylab = 'Glucose')
+ggsave(filename=paste("../out/actual ",i,".jpg",sep=""))
+real<- test_p_3_plus[c(865:874),7]
+predict_mean<-forecast_1$mean[1:10]
+predict_upper<-forecast_1$upper[1:10]
+predict_lower<-forecast_1$lower[1:10]
+res<-cbind(real,predict_mean, predict_lower,predict_upper)
+x[[i]]<-res
+}
+
+p<-x
+p<-p[c(1:200)]
+names(p) =names(list_df)
+easy_answer<- bind_rows(p, .id = "Patient_ID")
+
+easy_answer$predicted_time<-c(1:10)
+#write.csv(easy_answer, "../out/basic_cgm_predictions.csv")
+```
+## a short version to play with variables
+```{r}
+#a shortversion to play with variables
+short_list_df<- list_df[c(27,28,29)]
+#N<-3
+#x<-vector("list",N)
+B<-c(27,28,29)
+for (i in seq_along(B)){
+test_p <- short_list_df[[i]] 
+first_plot<-auto.arima(test_p$Glucose, trace=TRUE)
+#needs to hve right periodicity i.e. there are 288 lots of 5minutes in a day
+#take first 288 records
+#need to sort by record id
+test_p$DeviceDaysFromEnroll
+test_p <- test_p[order(test_p$DeviceDaysFromEnroll,test_p$DeviceTm),] 
+#this one to predict from 3 day
+test_p_3<- test_p[c(1:864),]
+#this one to compare
+test_p_3_plus<-test_p[c(1:874),]
+#make a time series with frequency 288
+my1 <- ts(test_p_3$Glucose)
+my2<-ts(test_p_3_plus$Glucose)
+#step here to chop the data to three days
+###
+#do this step on the three days two hours ahead, with a confidence interval
+fit_basic1<- auto.arima(test_p_3$Glucose)
+forecast_1<-forecast(fit_basic1)
+#now the plot needs to be three days+ 50 minutes withthe prediction overlaid with confidence interval
+autoplot(my1,main = 'CGM',xlab = 'Time',ylab = 'Glucose')+
+  autolayer(forecast_1, "prediction")
+autoplot(my2,main = 'CGM',xlab = 'Time',ylab = 'Glucose')
+
+real<- test_p_3_plus[c(865:874),7]
+predict_mean<-forecast_1$mean[1:10]
+predict_upper<-forecast_1$upper[1:10]
+predict_lower<-forecast_1$lower[1:10]
+res<-cbind(real,predict_mean, predict_lower,predict_upper)
+x[[i]]<-res
+}
+
+p<-x
+p<-p[c(1:200)]
+names(p) =names(short_list_df)
+easy_answer<- bind_rows(p, .id = "Patient_ID")
+
+easy_answer$predicted_time<-c(1:10)
+#write.csv(easy_answer, "../out/basic_cgm_predictions.csv")
+```
+
+
+  
+  
+  
+  
+  
+  
+test_p <- short_list_df[[i]] 
+first_plot<-auto.arima(test_p$Glucose, trace=TRUE)
+#needs to hve right periodicity i.e. there are 288 lots of 5minutes in a day
+#take first 288 records
+#need to sort by record id
+test_p$DeviceDaysFromEnroll
+test_p <- test_p[order(test_p$DeviceDaysFromEnroll,test_p$DeviceTm),] 
+#this one to predict from 3 day
+test_p_3<- test_p[c(1:864),]
+#this one to compare
+test_p_3_plus<-test_p[c(1:874),]
+#make a time series with frequency 288
+my1 <- ts(test_p_3$Glucose)
+my2<-ts(test_p_3_plus$Glucose)
+#step here to chop the data to three days
+###
+#do this step on the three days two hours ahead, with a confidence interval
+fit_basic1<- auto.arima(test_p_3$Glucose)
+forecast_1<-forecast(fit_basic1)
+#now the plot needs to be three days+ 50 minutes withthe prediction overlaid with confidence interval
+autoplot(my1,main = 'CGM',xlab = 'Time',ylab = 'Glucose')+
+  autolayer(forecast_1, "prediction")
+autoplot(my2,main = 'CGM',xlab = 'Time',ylab = 'Glucose')
+
+real<- test_p_3_plus[c(865:874),7]
+predict_mean<-forecast_1$mean[1:10]
+predict_upper<-forecast_1$upper[1:10]
+predict_lower<-forecast_1$lower[1:10]
+res<-cbind(real,predict_mean, predict_lower,predict_upper)
+x[[i]]<-res
+}
+
+
+
+
+
+
+```
+
+# Convert Date1 and Time to POSIXct
+
+comparison$Time <- format(as.POSIXct(comparison$Time,format='%m/%d/%Y %H:%M:%S'),format='%H:%M:%S')
+#reshape for ggplot
+comparisonMelted <- reshape2::melt(comparison, id.var='Time')
+#coerce time again
+comparisonMelted$Time = as.POSIXct(comparisonMelted$Time, format='%H:%M:%S')
+#graph data
+ggplot(data=comparisonMelted, aes(x=Time, y=value)) +
+  geom_line()+
+  geom_point()
+ggplot(comparisonMelted, aes(x=Time, y=value, col=variable)) + geom_line(size=2)
+plot5 <- ggplot(comparisonMelted, aes(Time, value, group = variable, colour = variable)) +
+        
+         geom_line(size=1.5) +
+
+scale_x_datetime(date_breaks = "1 hour",
+                       date_labels = "%I:%M %p")
+         labs(x = "Time", y = "CGM (mmol/L)", colour = "Subject"
+              )
+q<-plot5 + theme_classic()
+#include box of "ideal" range
+q+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
+  labs(x = "Time", y = "CGM (mmol/L)", colour = "Subject"
+              )+
+  annotate("rect",xmin = comparisonMelted[1,1], xmax =comparisonMelted[876,1]
+ , ymin = 3.9, ymax = 10, 
+           alpha = .25)+ scale_color_brewer(palette = "Paired")
+#plots all days over the top of each other for each patient
+lapply(
+  list_df, 
+  function(n) 
+    
+  ggplot(data=n, aes(x=DeviceTm, y=Glucose)) + geom_line(size=2)
+  +ggtitle(n[1,2])
+)
+
+#split into days, note there is a fair amount of missing data, which ARIMA won't like
+lapply(
+  list_df, 
+  function(n) 
+    
+  ggplot(data=n, aes(x=DeviceTm, y=Glucose, group = DeviceDaysFromEnroll, colour = DeviceDaysFromEnroll)) + geom_line(size=2)
+  +ggtitle(n[1,2])
+)
+#forcast future values
+par(mfrow=c(1,1))
+predict(fitARIMA,n.ahead = 5)
+futurVal <- forecast.Arima(fitARIMA,h=10, level=c(99.5))
+plot.forecast(futurVal)
+
+
+forecast(test_p$Glucose,h=10)
+forecast(test_p$Glucose,10)$fitted
+
+futurVal <- forecast.Arima(fitARIMA,h=10, level=c(99.5))
+plot.forecast(futurVal)
+auto.arima(tsData, trace=TRUE)
+
+#make an empty data frame to add in lapply function
+#use lapply function from first markdown to loop over the whole list
+#?how to get out if autoarima fails?....
+
+
+#devoff() to close dataframe at end of lapply i think
+# should give a table of all 200+ patients and if their BG could be predicted- could be correlated with their other variables e.g. complications, age, time since diagnosis etc
+ #ideally dataframe would include actual values at the end of two hours- bit of a pain to write
+##if/then/else loop
+if confidence interval is sufficeiently narrow at 2 hours e.g. +/-50 AND is within +/-25 of actual then write to dataframe== PREDICT
+else confidence interval is sufficeiently narrow at 2 hours e.g. +/-50 BUT is NOT within +/-25 of actual then write to dataframe== FAIL_ACTUAL
+else confidence interval is NOT sufficeiently narrow at 2 hours e.g. +/-50 BUT is  within +/-25 of actual then write to dataframe== FAIL_WIDE
+else confidence interval is NOT sufficeiently narrow at 2 hours e.g. +/-50 AND is NOT within +/-25 of actual then write to dataframe== FAIL_BOTH
+
+```{r}
+B<-c(1:203)
+for (i in seq_along(B)){
+test_p <- list_df[[paste("i")]] 
+}
+```
