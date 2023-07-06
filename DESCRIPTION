@@ -2,7 +2,7 @@ Package: CHAOSindex
 Type: Package
 Title: Generating a CHAOS index for type 1 diabetes
 Version: 0.1.0
-Author: Alice Carr PhD, Peter Taylor MD
+Author: Alice Carr PhD, Peter Taylor MD, Steph Hanna PhD
 Maintainer: The package maintainer <acarr1@ualberta.ca>
 Description: New metrics from non-invasive tools to more rapidly and effectively identify and monitor high risk individuals with Type 1 diabetes requiring advanced treatment.
 Imports:
