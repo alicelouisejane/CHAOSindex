@@ -385,11 +385,11 @@ mape30_maxhorizon <- data.frame(id=Id,
                                 absolute_percentage_error=mean(absolute_percentage_error_30),
                                 horizon=30)
 
-# store model accuracy parameters
+## Store model accuracy parameters
 # validation to be done - these may give better info than the mape
 # AIC (Akaike Information Criterion): metric that balances the goodness of fit of the model with its complexity. It penalizes models with more parameters to prevent overfitting. A lower AIC value indicates a better trade-off between model fit and complexity.
-#sigma^2: represents the estimated variance of the error term (residuals) in the ARIMA model. It provides a measure of the variability or dispersion of the residuals around the model's fitted values.
-#Log likelihood: It refers to the logarithm of the likelihood function, which measures how well the ARIMA model fits the data. The higher the log likelihood, the better the fit of the model to the data.
+#sigma^2: represents the estimated variance of the error term (residuals) in the ARIMA model. It provides a measure of the variability or dispersion of the residuals around the model's fitted values. A lower value indicates that the residuals are tightly clustered around the predicted values, suggesting a better fit of the model to the data.
+#Log likelihood: refers to the logarithm of the likelihood function, which measures how well the ARIMA model fits the data. The higher the log likelihood, the better the fit of the model to the data.
 
 modelsummary<-data.frame(id=Id,
                          AIC=sarima_model$aic,
@@ -411,7 +411,7 @@ modelsummaryparms[[f]]<-modelsummary
 graph2<- ggplot() +
   geom_rect(data = BDataCGM_forcast,aes(xmin=BDataCGM_forcast[865,]$timestamp,xmax=BDataCGM_forcast[(864+(maxhorizon/5)),]$timestamp,ymin=2,ymax=sensormax,fill="Window to predict"),alpha=0.5)+
   geom_path(data=BDataCGM_forcast,aes(x =timestamp, y = sensorglucose)) +
-  labs(x = "Time", y = "Glucose",title="Patients real glucose trace up used in ARIMA forcast") +
+  labs(x = "Time", y = "Glucose",title="Patients real glucose trace used in ARIMA forcast") +
   theme_minimal() +
   theme(
     legend.position = c(0.85, 0.9),  # Adjust the position of the legend box (top-right corner)
