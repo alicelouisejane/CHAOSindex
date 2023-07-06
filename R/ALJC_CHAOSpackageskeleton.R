@@ -7,7 +7,7 @@
 # This package is in development.
 # Use this code as directed.
 #'
-#' @author Alice Carr, Peter Taylor
+#' @author Alice Carr, Peter Taylor, Steph Hanna
 #' @param inputdirectory A string file path to a file of raw CGM downloads.
 #' @param outputdirectory A string file path to the output data file, folder will be generated if it doesn't exist. Default folder name: "output".
 #' @param maxhorizon A numeric of the number of minutes for the maximum horizon we want to predict to in addition to the 30 minute horizon. Default to 90 minutes.
@@ -35,11 +35,15 @@
 # cgm_dict<-rio::import("data/cgmvariable_dictionary.xlsx")
 
 #
-# inputdirectory<-"/Users/alicecarr/Desktop/C-path/TOMI 2/CHAOS Index/rawdownloads/"
-# outputdirectory<-"/Users/alicecarr/Desktop/C-path/TOMI 2/CHAOS Index/testoutput"
-# maxhorizon=90
-# saveplot=T
+#inputdirectory<-"/Users/alicecarr/Desktop/C-path/TOMI 2/CHAOS Index/rawdownloads/"
+#outputdirectory<-"/Users/alicecarr/Desktop/C-path/TOMI 2/CHAOS Index/testoutput"
+#maxhorizon=90
+#saveplot=T
 
+# if package is not built you will likely need install packages (only if you havent already done this on your machine)
+#and load the library by for example
+#install.packages(dplyr)
+#library(dplyr)
 
 
 CHAOSindex <- function(inputdirectory,outputdirectory="output",maxhorizon=90,saveplot=T) {
@@ -185,7 +189,6 @@ CHAOSindex <- function(inputdirectory,outputdirectory="output",maxhorizon=90,sav
         dplyr::mutate(across(sensorglucose, \(x) round(x, digits = 1)))
 
 
-
     }else if(grepl("dexcom",device_vars$type[1])) {
 
       #we fill in any gaps where there has been dropout
@@ -268,7 +271,7 @@ consecutive_dates <- rle(!is.na(BDataCGM$sensorglucose))
 # there are 288 indexes (5mins) in 24hours.
 # we train on 3 days = 864
 # we want to predict 30min ahead
-# we also want to predict up to the maxhorizon, default to 60,
+# we also want to predict up to the maxhorizon, default to 90,
 # so need to compare to 18 further indexes = 882
 
 valid_sequences <- which(consecutive_dates$lengths >= 864 + (maxhorizon/5))
