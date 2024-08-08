@@ -382,12 +382,12 @@ output_params<-bind_rows(modelsummaryparms[!is.null(modelsummaryparms)])
 rio::export(output_params,paste(outputdirectory,Id,"modeloutputparams.csv"))
 
 output_prediction_maximumhorizon<-bind_rows(predictionmaxhorizon_output[!is.null(predictionmaxhorizon_output)])
-rio::export(output_params,paste(outputdirectory,Id,"predictionsmaximumhorizon.csv"))
+rio::export(output_prediction_maximumhorizon,paste(outputdirectory,Id,"predictionsmaximumhorizon.csv"))
 
 output_prediction_30mins<-bind_rows(prediction30_output[!is.null(prediction30_output)])
-rio::export(output_params,paste(outputdirectory,Id,"predictions30mins.csv"))
+rio::export(output_prediction_30mins,paste(outputdirectory,Id,"predictions30mins.csv"))
 
 output_mape<-bind_rows(MAPE_output[!is.null(MAPE_output)])
-rio::export(output_params,paste(outputdirectory,Id,"mape.csv"))
+rio::export(output_mape,paste(outputdirectory,Id,"mape.csv"))
 
 }
