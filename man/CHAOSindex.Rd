@@ -2,7 +2,7 @@
 % Please edit documentation in R/ALJC_CHAOSpackageskeleton.R
 \name{CHAOSindex}
 \alias{CHAOSindex}
-\title{Generate CHAOS index}
+\title{CHAOSindex}
 \usage{
 CHAOSindex(
   inputdirectory,
@@ -12,24 +12,27 @@ CHAOSindex(
 )
 }
 \arguments{
-\item{inputdirectory}{A string file path to a file of raw CGM downloads.}
+\item{inputdirectory}{path to folder containing raw files. If data is pre-aggregated then use the full file path including file name of this file.
+Preferred csv format but can read in others.}
 
-\item{outputdirectory}{A string file path to the output data file, folder will be generated if it doesn't exist. Default folder name: "output".}
-
-\item{maxhorizon}{A numeric of the number of minutes for the maximum horizon we want to predict to in addition to the 30 minute horizon. Default to 90 minutes.
-keep as default.}
+\item{outputdirectory}{path to folder where output files will be stored}
 
 \item{saveplot}{A TRUE/FALSE to save all associated plots for each patient as in a combined PDF. Default to TRUE. If FALSE no PDFs will be generated.}
+
+\item{aggregated}{TRUE/FALSE dictates if data is pre-aggregated or in individual separate files (usual for clinical trials)}
 }
 \value{
-Description of the object returned by the function.
+Returns PDF of CGM traces and modelling prediction windows as well as csv files of the ARMIA model "accuracy" parameters, the Mean Absolute Percentage Errors (MAPE) for a 30 minute prediction window
+as well as the chosen maximum prediction horizon (default to 90 min). Also outputs the full file of the real values and predicted values from this prediction for 30 mins and the chosen maximum horizon.
 }
 \description{
-Enables generation of the CHAOS index from CGM data.
-This is an concept index in development at the University of Alberta and University of Cardiff
-being trialed to rapidly and effectively identify and monitor high risk individuals with
-Type 1 diabetes requiring advanced treatment.
+This function Enables generation of the CHAOS index from CGM data. CGM data must be cleaned and in the format as described in the README also see cleanCGM from the CGMprocessing package.
+This is an concept index in development at the University of Alberta and University of Cardiff being trialed to rapidly and effectively identify and monitor high risk individuals with
+Type 1 diabetes requiring advanced treatment. This package is in development.
+}
+\seealso{
+CGMprocessing cleanCGM
 }
 \author{
-Alice Carr, Peter Taylor
+Alice Carr (University of Alberta), Peter Taylor (University of Cardiff), Steph Hanna (University of Cardiff)
 }

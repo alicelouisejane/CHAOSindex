@@ -1,22 +1,24 @@
-#' Generate CHAOS index
+#' @title CHAOSindex
 #'
-#' Enables generation of the CHAOS index from CGM data.
-#' This is an concept index in development at the University of Alberta and University of Cardiff
-#' being trialed to rapidly and effectively identify and monitor high risk individuals with
-#' Type 1 diabetes requiring advanced treatment.
-# This package is in development.
-# Use this code as directed.
+#' @description This function Enables generation of the CHAOS index from CGM data. CGM data must be cleaned and in the format as described in the README also see cleanCGM from the CGMprocessing package.
+#'This is an concept index in development at the University of Alberta and University of Cardiff being trialed to rapidly and effectively identify and monitor high risk individuals with
+#' Type 1 diabetes requiring advanced treatment. This package is in development.
 #'
-#' @author Alice Carr, Peter Taylor, Steph Hanna
-#' @param inputdirectory A string file path to a file of raw CGM downloads.
-#' @param outputdirectory A string file path to the output data file, folder will be generated if it doesn't exist. Default folder name: "output".
-#' @param maxhorizon A numeric of the number of minutes for the maximum horizon we want to predict to in addition to the 30 minute horizon. Default to 90 minutes.
-#' keep as default.
+#' @returns Returns PDF of CGM traces and modelling prediction windows as well as csv files of the ARMIA model "accuracy" parameters, the Mean Absolute Percentage Errors (MAPE) for a 30 minute prediction window
+#' as well as the chosen maximum prediction horizon (default to 90 min). Also outputs the full file of the real values and predicted values from this prediction for 30 mins and the chosen maximum horizon.
+#'
+#' @param inputdirectory path to folder containing raw files. If data is pre-aggregated then use the full file path including file name of this file.
+#' Preferred csv format but can read in others.
+#'
+#' @param aggregated TRUE/FALSE dictates if data is pre-aggregated or in individual separate files (usual for clinical trials)
+#'
+#' @param outputdirectory path to folder where output files will be stored
+#'
 #' @param saveplot A TRUE/FALSE to save all associated plots for each patient as in a combined PDF. Default to TRUE. If FALSE no PDFs will be generated.
-#' @return Description of the object returned by the function.
+#'
+#' @importFrom rio import export
+#' @importFrom dplyr mutate summarise n lead across contains filter select group_by inner_join slice ungroup arrange bind_rows rename
 #' @import dplyr
-#' @import here
-#' @import ggplot2
 #' @import tidyr
 #' @import forecast
 #' @import anytime
@@ -24,18 +26,17 @@
 #' @import forecastML
 #' @import imputeTS
 #' @import Hmisc
-#' @import cowplot
-#' @import rio
+#' @importFrom cowplot plot_grid ggdraw draw_label
+#' @import ggplot2
 #' @import hms
+#' @importFrom tools file_path_sans_ext
+#' @importFrom anytime anytime addFormats
+#'
+#' @author Alice Carr (University of Alberta), Peter Taylor (University of Cardiff), Steph Hanna (University of Cardiff)
+#'
 #' @export
-
-# This package is not built so you will likely need install packages that are listed above in import ( if you havent already done this on your machine)
-#and also load the library by for example
-#install.packages(dplyr)
-#library(dplyr)
-
-# ensure you use clean data in the format of
-inputdirectory<-"/Users/alicecarr/Desktop/file_test/"
+#' @seealso
+#' CGMprocessing cleanCGM
 
 CHAOSindex <- function(inputdirectory,outputdirectory="output",maxhorizon=90,saveplot=T) {
   #define lists to store outputs
@@ -87,7 +88,7 @@ CHAOSindex <- function(inputdirectory,outputdirectory="output",maxhorizon=90,sav
 
     graph1<- ggplot2::ggplot(data = data, ggplot2::aes(x = as.POSIXct(time, format = "%H:%M:%S"), y = as.numeric(sensorglucose))) +
       ggplot2::geom_path(ggplot2::aes(group = interaction(as.factor(date), id), colour = as.factor(date)), colour = "grey") +
-      labs(x = "Time", y = "Glucose", title=paste("Summary of CGM wear over:",length(unique(as.Date(table$timestamp))),"days")) +
+      ggplot2::labs(x = "Time", y = "Glucose", title=paste("Summary of CGM wear over:",length(unique(as.Date(table$timestamp))),"days")) +
       ggplot2::theme_minimal() +
       ggplot2::scale_x_datetime(date_labels = "%H:%M", date_breaks = "2 hours") +
       # median hi low and IQR could be the same as each other...
@@ -131,13 +132,13 @@ CHAOSindex <- function(inputdirectory,outputdirectory="output",maxhorizon=90,sav
 
 # step 2: select days that have no missing glucose after the imputation from cleanCGM ie. remove days that had big gaps
     BDataCGM <- table %>%
-    mutate(diff=abs(difftime(timestamp,lead(timestamp), units = "mins"))) %>%
-    mutate(diff=ifelse(is.na(diff),0,diff)) %>%
-    mutate(biggap=ifelse(diff>20,1,NA))  %>%
+    dplyr::mutate(diff=abs(difftime(timestamp,lead(timestamp), units = "mins"))) %>%
+    dplyr::mutate(diff=ifelse(is.na(diff),0,diff)) %>%
+    dplyr::mutate(biggap=ifelse(diff>20,1,NA))  %>%
     group_by(date) %>%
-    fill(biggap,.direction = "updown")  %>%
+    tidyr::fill(biggap,.direction = "updown")  %>%
     ungroup() %>%
-    filter(!is.na(biggap)) %>% # we use sensorreadings number to avoid selecting half days at start/end of sensor
+    filter(is.na(biggap)) %>% # we use sensorreadings number to avoid selecting half days at start/end of sensor
     select(-c(biggap,diff))
 
 if (nrow(BDataCGM) == 0) {
@@ -190,14 +191,14 @@ if (n_valid_sequences == 0) {
 }
 
 # if more than one valid sequence to run on Select a random valid sequence
-random_sequence_index <- unlist(sample(list(valid_sequences), 1,replace = T))
-
+random_sequence_index <- unlist(sample(valid_sequences, 1, replace = TRUE))
+random_sequence_index<-7
 positions<-c(0,cumsum(consecutive_dates$lengths))
 
-if(random_sequence_index==1){
+if(length(valid_sequences)==1){
 start_index<-1
 end_index <- start_index + (positions[random_sequence_index])
-}else if(random_sequence_index!=1){
+}else if(length(valid_sequences)!=1){
 start_index <- positions[random_sequence_index] + 1
 end_index <-positions[random_sequence_index+1]
   }
@@ -310,9 +311,9 @@ modelsummaryparms[[f]]<-modelsummary
 # zoom on prediction
 
 graph2<- ggplot() +
-  geom_rect(data = BDataCGM_forcast,aes(xmin=BDataCGM_forcast[865,]$timestamp,xmax=BDataCGM_forcast[(864+(maxhorizon/5)),]$timestamp,ymin=2,ymax=24,fill="Window to predict"),alpha=0.5)+
-  geom_path(data=BDataCGM_forcast,aes(x =timestamp, y = sensorglucose)) +
-  labs(x = "Time", y = "Glucose",title="Patients real glucose trace used in ARIMA forcast") +
+  ggplot2::geom_rect(data = BDataCGM_forcast,aes(xmin=BDataCGM_forcast[865,]$timestamp,xmax=BDataCGM_forcast[(864+(maxhorizon/5)),]$timestamp,ymin=2,ymax=24,fill="Window to predict"),alpha=0.5)+
+  ggplot2::geom_path(data=BDataCGM_forcast,aes(x =timestamp, y = sensorglucose)) +
+  ggplot2::labs(x = "Time", y = "Glucose",title="Patients real glucose trace used in ARIMA forcast") +
   theme_minimal() +
   theme(
     legend.position = c(0.85, 0.9),  # Adjust the position of the legend box (top-right corner)
@@ -362,7 +363,7 @@ graph2<- ggplot() +
   bottom_row <- cowplot::plot_grid(graph3, graph4)
 
   # then combine with the top row for final plot
-  graphoutput<-suppressWarnings(cowplot::plot_grid(graph1,graph2, bottom_row, ncol = 1,rel_heights = c(4,4,2,2)))
+    graphoutput<-suppressWarnings(cowplot::plot_grid(graph1,graph2, bottom_row, ncol = 1,rel_heights = c(4,4,2,2)))
 
   graphoutput_title<-ggdraw(cowplot::plot_grid(
     NULL,
@@ -379,15 +380,15 @@ if(saveplot==T){
   }
 
 output_params<-bind_rows(modelsummaryparms[!is.null(modelsummaryparms)])
-rio::export(output_params,paste(outputdirectory,Id,"modeloutputparams.csv"))
+rio::export(output_params,paste0(outputdirectory,Id,"_modeloutputparams.csv"))
 
 output_prediction_maximumhorizon<-bind_rows(predictionmaxhorizon_output[!is.null(predictionmaxhorizon_output)])
-rio::export(output_prediction_maximumhorizon,paste(outputdirectory,Id,"predictionsmaximumhorizon.csv"))
+rio::export(output_prediction_maximumhorizon,paste0(outputdirectory,Id,"_predictionsmaximumhorizon.csv"))
 
 output_prediction_30mins<-bind_rows(prediction30_output[!is.null(prediction30_output)])
-rio::export(output_prediction_30mins,paste(outputdirectory,Id,"predictions30mins.csv"))
+rio::export(output_prediction_30mins,paste0(outputdirectory,Id,"_predictions30mins.csv"))
 
 output_mape<-bind_rows(MAPE_output[!is.null(MAPE_output)])
-rio::export(output_mape,paste(outputdirectory,Id,"mape.csv"))
+rio::export(output_mape,paste0(outputdirectory,Id,"_mape.csv"))
 
 }
