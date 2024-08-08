@@ -7,6 +7,7 @@
 CHAOSindex(
   inputdirectory,
   outputdirectory = "output",
+  aggregated = F,
   maxhorizon = 90,
   saveplot = T
 )
@@ -17,9 +18,11 @@ Preferred csv format but can read in others.}
 
 \item{outputdirectory}{path to folder where output files will be stored}
 
-\item{saveplot}{A TRUE/FALSE to save all associated plots for each patient as in a combined PDF. Default to TRUE. If FALSE no PDFs will be generated.}
-
 \item{aggregated}{TRUE/FALSE dictates if data is pre-aggregated or in individual separate files (usual for clinical trials)}
+
+\item{maxhorizon}{A numeric value in minutes of the maximum horizon time you want to predict up until. Default is 90 (minutes).}
+
+\item{saveplot}{A TRUE/FALSE to save all associated plots for each patient as in a combined PDF. Default to TRUE. If FALSE no PDFs will be generated.}
 }
 \value{
 Returns PDF of CGM traces and modelling prediction windows as well as csv files of the ARMIA model "accuracy" parameters, the Mean Absolute Percentage Errors (MAPE) for a 30 minute prediction window

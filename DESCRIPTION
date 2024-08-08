@@ -7,7 +7,6 @@ Maintainer: Email package maintainer <acarr1@ualberta.ca>
 Description: New metrics from non-invasive tools to more rapidly and effectively identify and monitor high risk individuals with Type 1 diabetes requiring advanced treatment.
 Imports:
     Hmisc,
-    here,
     anytime,
     cowplot,
     dplyr,
@@ -18,7 +17,8 @@ Imports:
     lubridate,
     tidyr,
     rio,
-    hms
+    hms,
+    pracma
 License: CC-BY-NC-SA-4.0
 Encoding: UTF-8
 LazyData: true

@@ -14,12 +14,15 @@
 #'
 #' @param outputdirectory path to folder where output files will be stored
 #'
+#' @param maxhorizon A numeric value in minutes of the maximum horizon time you want to predict up until. Default is 90 (minutes).
+#'
 #' @param saveplot A TRUE/FALSE to save all associated plots for each patient as in a combined PDF. Default to TRUE. If FALSE no PDFs will be generated.
 #'
 #' @importFrom rio import export
 #' @importFrom dplyr mutate summarise n lead across contains filter select group_by inner_join slice ungroup arrange bind_rows rename
 #' @import dplyr
 #' @import tidyr
+#' @import pracma
 #' @import forecast
 #' @import anytime
 #' @import lubridate
@@ -38,7 +41,7 @@
 #' @seealso
 #' CGMprocessing cleanCGM
 
-CHAOSindex <- function(inputdirectory,outputdirectory="output",maxhorizon=90,saveplot=T) {
+CHAOSindex <- function(inputdirectory,outputdirectory="output",aggregated=F,maxhorizon=90,saveplot=T) {
   #define lists to store outputs
   prediction30_output<-list()
   predictionmaxhorizon_output<-list()
@@ -138,8 +141,8 @@ CHAOSindex <- function(inputdirectory,outputdirectory="output",maxhorizon=90,sav
     group_by(date) %>%
     tidyr::fill(biggap,.direction = "updown")  %>%
     ungroup() %>%
-    filter(is.na(biggap)) %>% # we use sensorreadings number to avoid selecting half days at start/end of sensor
-    select(-c(biggap,diff))
+    dplyr::filter(is.na(biggap)) %>% # we use sensorreadings number to avoid selecting half days at start/end of sensor
+    dplyr::select(-c(biggap,diff))
 
 if (nrow(BDataCGM) == 0) {
       stop(paste("No dates in file without gaps in time.
@@ -162,7 +165,7 @@ if (nrow(BDataCGM) == 0) {
 
 #now check for missing dates
     BDataCGM <- BDataCGM %>%
-      mutate(consecutive = cumsum(c(1, diff(as.Date(date)) > 1)))
+      dplyr::mutate(consecutive = cumsum(c(1, diff(as.Date(date)) > 1)))
 
 
 # Find the unique consecutive date sequences
@@ -214,7 +217,7 @@ random_start <- sample(1:(nrow(window) - (864 + (maxhorizon/5))), 1)
 random_end <- random_start + (864 + (maxhorizon/5)-1)
 
 random_window_final<-window[random_start:random_end,] %>%
-  select(-consecutive)
+  dplyr::select(-consecutive)
 
 
 
@@ -314,48 +317,48 @@ graph2<- ggplot() +
   ggplot2::geom_rect(data = BDataCGM_forcast,aes(xmin=BDataCGM_forcast[865,]$timestamp,xmax=BDataCGM_forcast[(864+(maxhorizon/5)),]$timestamp,ymin=2,ymax=24,fill="Window to predict"),alpha=0.5)+
   ggplot2::geom_path(data=BDataCGM_forcast,aes(x =timestamp, y = sensorglucose)) +
   ggplot2::labs(x = "Time", y = "Glucose",title="Patients real glucose trace used in ARIMA forcast") +
-  theme_minimal() +
-  theme(
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
     legend.position = c(0.85, 0.9),  # Adjust the position of the legend box (top-right corner)
     legend.background = element_rect(fill = "white", color = "black"),  # Customize the legend box
     legend.key.size = unit(0.5, "cm"),  # Adjust the size of the legend keys
     legend.text = element_text(size = 10),  # Adjust the size of the legend text
     legend.title = element_text(size = 12, face = "bold")  # Adjust the size and style of the legend title
   ) +
-  scale_y_continuous(limits = c(2,24),breaks=c(seq(2,24,2))) +
-  scale_fill_manual("Key",values = c("indianred"))
+  ggplot2::scale_y_continuous(limits = c(2,24),breaks=c(seq(2,24,2))) +
+  ggplot2::scale_fill_manual("Key",values = c("indianred"))
 
-  graph3<- ggplot() +
-    geom_path(data=prediction_df_maxhorizon,aes(x =timestamp, y = real_maxhorizon, colour="real data"), show.legend = T) +
+  graph3<- ggplot2::ggplot() +
+    ggplot2::geom_path(data=prediction_df_maxhorizon,aes(x =timestamp, y = real_maxhorizon, colour="real data"), show.legend = T) +
     #geom_path(data=prediction_df_maxhorizon,aes(x =timestamp, y = predicted_value,colour=paste("maxhorizon:",maxhorizon,"mins"),show.legend = T), colour="lightblue") +
     #geom_ribbon(data=prediction_df_maxhorizon,aes(x =timestamp, y=predicted_value,ymin = predicted_lower95,ymax = predicted_upper95),fill="lightblue",alpha=0.3) +
-  geom_path(data=prediction_df_30,aes(x =timestamp, y = predicted_value,colour="30mins"),show.legend = T) +
-    geom_ribbon(data=prediction_df_30,aes(x =timestamp, y=predicted_value,ymin = predicted_lower95,ymax = predicted_upper95),fill="indianred",alpha=0.3) +
-  labs(x = "Time", y = "Glucose") +
-    theme_minimal() +
-  theme(
-    legend.position = c(0.85, 0.9),  # Adjust the position of the legend box (top-right corner)
-    legend.background = element_rect(fill = "white", color = "black"),  # Customize the legend box
-    legend.key.size = unit(0.3, "cm"),  # Adjust the size of the legend keys
-    legend.text = element_text(size = 6),  # Adjust the size of the legend text
-    legend.title = element_text(size = 8, face = "bold")  # Adjust the size and style of the legend title
-  )+ scale_color_manual("Key",values = c("indianred","black"))
+    ggplot2::geom_path(data=prediction_df_30,aes(x =timestamp, y = predicted_value,colour="30mins"),show.legend = T) +
+    ggplot2::geom_ribbon(data=prediction_df_30,aes(x =timestamp, y=predicted_value,ymin = predicted_lower95,ymax = predicted_upper95),fill="indianred",alpha=0.3) +
+    ggplot2::labs(x = "Time", y = "Glucose") +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      legend.position = c(0.85, 0.9),  # Adjust the position of the legend box (top-right corner)
+      legend.background = element_rect(fill = "white", color = "black"),  # Customize the legend box
+      legend.key.size = unit(0.3, "cm"),  # Adjust the size of the legend keys
+      legend.text = element_text(size = 6),  # Adjust the size of the legend text
+      legend.title = element_text(size = 8, face = "bold")  # Adjust the size and style of the legend title
+  )+ ggplot2::scale_color_manual("Key",values = c("indianred","black"))
 
-  graph4<- ggplot() +
-  geom_path(data=prediction_df_maxhorizon,aes(x =timestamp, y = real_maxhorizon, colour="real data"),show.legend = T) +
-  geom_path(data=prediction_df_maxhorizon,aes(x =timestamp, y = predicted_value,colour=paste("maxhorizon:",maxhorizon,"mins")), show.legend = T) +
-  geom_ribbon(data=prediction_df_maxhorizon,aes(x =timestamp, y=predicted_value,ymin = predicted_lower95,ymax = predicted_upper95),fill="lightblue",alpha=0.3) +
+  graph4<- ggplot2::ggplot() +
+    ggplot2::geom_path(data=prediction_df_maxhorizon,aes(x =timestamp, y = real_maxhorizon, colour="real data"),show.legend = T) +
+    ggplot2::geom_path(data=prediction_df_maxhorizon,aes(x =timestamp, y = predicted_value,colour=paste("maxhorizon:",maxhorizon,"mins")), show.legend = T) +
+    ggplot2::geom_ribbon(data=prediction_df_maxhorizon,aes(x =timestamp, y=predicted_value,ymin = predicted_lower95,ymax = predicted_upper95),fill="lightblue",alpha=0.3) +
   #geom_path(data=prediction_df_30,aes(x =timestamp, y = predicted_value,colour="30mins"),colour="indianred") +
   #geom_ribbon(data=prediction_df_30,aes(x =timestamp, y=predicted_value,ymin = predicted_lower95,ymax = predicted_upper95),fill="indianred",alpha=0.3) +
-  labs(x = "Time", y = "Glucose") +
-  theme_minimal() +
-  theme(
-    legend.position = c(0.85, 0.9),  # Adjust the position of the legend box (top-right corner)
-    legend.background = element_rect(fill = "white", color = "black"),  # Customize the legend box
-    legend.key.size = unit(0.3, "cm"),  # Adjust the size of the legend keys
-    legend.text = element_text(size = 6),  # Adjust the size of the legend text
-    legend.title = element_text(size = 8, face = "bold")  # Adjust the size and style of the legend title
-  ) + scale_color_manual("Key",values = c("lightblue","black"))
+    ggplot2::labs(x = "Time", y = "Glucose") +
+    ggplot2::theme_minimal() +
+    ggplot2:: theme(
+      legend.position = c(0.85, 0.9),  # Adjust the position of the legend box (top-right corner)
+      legend.background = element_rect(fill = "white", color = "black"),  # Customize the legend box
+      legend.key.size = unit(0.3, "cm"),  # Adjust the size of the legend keys
+      legend.text = element_text(size = 6),  # Adjust the size of the legend text
+      legend.title = element_text(size = 8, face = "bold")  # Adjust the size and style of the legend title
+  ) + ggplot2::scale_color_manual("Key",values = c("lightblue","black"))
 
 # combine all plots for outupt PDF
   plots <- suppressWarnings(cowplot::align_plots(graph1, graph2, graph3, graph4,align = 'v', axis = 'l'))
@@ -365,30 +368,30 @@ graph2<- ggplot() +
   # then combine with the top row for final plot
     graphoutput<-suppressWarnings(cowplot::plot_grid(graph1,graph2, bottom_row, ncol = 1,rel_heights = c(4,4,2,2)))
 
-  graphoutput_title<-ggdraw(cowplot::plot_grid(
+  graphoutput_title<-cowplot::ggdraw(cowplot::plot_grid(
     NULL,
     graphoutput,
     ncol = 1,
     rel_heights = c(0.07, 0.93)
   )) +
-    draw_label(paste("Patient ID:",Id), x = 0.5, y = 0.95, hjust = 0.5, fontface = "bold", size = 14)
+    cowplot::draw_label(paste("Patient ID:",Id), x = 0.5, y = 0.95, hjust = 0.5, fontface = "bold", size = 14)
 
 if(saveplot==T){
   #save the plot, all patients
-  ggsave(paste(outputdirectory,Id,"combinedplot_output.pdf"),graphoutput_title, width=8,height=10)
+  ggplot2::ggsave(paste(outputdirectory,Id,"combinedplot_output.pdf"),graphoutput_title, width=8,height=10)
 }
   }
 
-output_params<-bind_rows(modelsummaryparms[!is.null(modelsummaryparms)])
+output_params<-dplyr::bind_rows(modelsummaryparms[!is.null(modelsummaryparms)])
 rio::export(output_params,paste0(outputdirectory,Id,"_modeloutputparams.csv"))
 
-output_prediction_maximumhorizon<-bind_rows(predictionmaxhorizon_output[!is.null(predictionmaxhorizon_output)])
+output_prediction_maximumhorizon<-dplyr::bind_rows(predictionmaxhorizon_output[!is.null(predictionmaxhorizon_output)])
 rio::export(output_prediction_maximumhorizon,paste0(outputdirectory,Id,"_predictionsmaximumhorizon.csv"))
 
-output_prediction_30mins<-bind_rows(prediction30_output[!is.null(prediction30_output)])
+output_prediction_30mins<-dplyr::bind_rows(prediction30_output[!is.null(prediction30_output)])
 rio::export(output_prediction_30mins,paste0(outputdirectory,Id,"_predictions30mins.csv"))
 
-output_mape<-bind_rows(MAPE_output[!is.null(MAPE_output)])
+output_mape<-dplyr::bind_rows(MAPE_output[!is.null(MAPE_output)])
 rio::export(output_mape,paste0(outputdirectory,Id,"_mape.csv"))
 
 }
