@@ -1,14 +1,14 @@
 {
     "left": {
-        "splitterpos": 336,
+        "splitterpos": 270,
         "topwindowstate": "NORMAL",
-        "panelheight": 804,
-        "windowheight": 842
+        "panelheight": 649,
+        "windowheight": 687
     },
     "right": {
-        "splitterpos": 505,
+        "splitterpos": 357,
         "topwindowstate": "NORMAL",
-        "panelheight": 804,
-        "windowheight": 842
+        "panelheight": 649,
+        "windowheight": 687
     }
 }

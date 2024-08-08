@@ -29,22 +29,13 @@
 #' @import hms
 #' @export
 
-
-
-# # if package is not built download all files on GitHub and navigate to the file path as below
-# cgm_dict<-rio::import("data/cgmvariable_dictionary.xlsx")
-
-#
-#inputdirectory<-"/Users/alicecarr/Desktop/C-path/TOMI 2/CHAOS Index/rawdownloads/"
-#outputdirectory<-"/Users/alicecarr/Desktop/C-path/TOMI 2/CHAOS Index/testoutput"
-#maxhorizon=90
-#saveplot=T
-
-# if package is not built you will likely need install packages (only if you havent already done this on your machine)
-#and load the library by for example
+# This package is not built so you will likely need install packages that are listed above in import ( if you havent already done this on your machine)
+#and also load the library by for example
 #install.packages(dplyr)
 #library(dplyr)
 
+# ensure you use clean data in the format of
+inputdirectory<-"/Users/alicecarr/Desktop/file_test/"
 
 CHAOSindex <- function(inputdirectory,outputdirectory="output",maxhorizon=90,saveplot=T) {
   #define lists to store outputs
@@ -53,90 +44,20 @@ CHAOSindex <- function(inputdirectory,outputdirectory="output",maxhorizon=90,sav
   MAPE_output<-list()
   modelsummaryparms<-list()
 
-  #cgm variable dictionary in documentation data file. Edit source file as necessary if using other CGM
-  file_path <- here::here("inst/extdata", "cgmvariable_dictionary.xlsx")
-  cgm_dict<-rio::import(file_path)
 
-  #Define all necessary parts
-
-  # Read in data: anticipated structure is a file containing raw CGM downloads
+  # Read in data: anticipated structure is a file containing clean CGM downloads
   files <- base::list.files(path = inputdirectory, full.names = TRUE)
 
   # output directory is created
   base::dir.create(outputdirectory, showWarnings = FALSE)
 
-# Step 1: clean the CGM data, impute time gaps (if libre impute to 5 mins)
+# Step 1: read in the CGM data, ensure time gaps imputed
   for (f in 1:base::length(files)) {
 
     #id from filename
     Id <- tools::file_path_sans_ext(basename(files[f]))
 
-    #handle various file extensions - colud be neccessary hopefully not
-    # fileextension<-tools::file_ext(files[f])
-    #
-    # if(fileextension=="csv"){
-    # table <-  base::suppressWarnings(rio::import(files[f], guess_max = 10000000,
-    #                                              col_types = "c"))
-    # }else if(fileextension=="xlsx"){
-    #   table <-  base::suppressWarnings(rio::import(files[f], guess_max = 10000000))
-    # }
-
     table <-  base::suppressWarnings(rio::import(files[f], guess_max = 10000000))
-
-
-    #indicates what device we are using the data from, possibly important to keep track of
-    device_vars<- cgm_dict[cgm_dict$old_vars %in% names(table), ]
-
-    # rename the variables to standardised variables names
-    colnames(table) <- dplyr::recode(
-    colnames(table),
-    !!!setNames(as.character(cgm_dict$new_vars), cgm_dict$old_vars))
-
-
-# high and low limits from :
-    #https://uk.provider.dexcom.com/sites/g/files/rrchkb126/files/document/2021-09/LBL017451%2BUsing%2BYour%2BG6%2C%2BG6%2C%2BUK%2C%2BEN%2C%2Bmmol_0.pdf
-    # suggests libre 2 has different limits to libre 1 but this is not the case whan i look at my own data
-    #https://www.freestyle.abbott/us-en/support/faq.html?page=device/freestyle-libre-2-system/faq/topic/reader
-
-    if (grepl("dexcom",device_vars$type[1])) {
-      #change instances of low/ high to sensor limits
-      table$sensorglucose <- as.character(table$sensorglucose)
-      base::suppressWarnings(
-        table <- table %>% dplyr::mutate(sensorglucose = dplyr::case_when(
-          grepl("low", sensorglucose, ignore.case = TRUE) ~ "2.2",
-          grepl("high", sensorglucose, ignore.case = TRUE)  ~ "22.2",
-          TRUE ~ table$sensorglucose
-        ))
-      )
-      sensormin=2.2
-      sensormax=24
-    } else if (grepl("^libre$",device_vars$type[1])) {
-      #DO NOT INCLUDE ANY OTHER RECODS OTHER THAN CGM ie. NOT scanglucose
-      table <- dplyr::filter(table,recordtype==0)
-      #add any scan glucoses to the sensor glucose
-      table<-dplyr::select(table,-c(recordtype,scanglucose))
-      table$sensorglucose <- as.character(table$sensorglucose)
-      base::suppressWarnings(
-        table <- table %>% dplyr::mutate(sensorglucose = dplyr::case_when(
-          grepl("lo", sensorglucose, ignore.case = TRUE)  ~ "2.2",
-          grepl("hi", sensorglucose, ignore.case = TRUE)  ~ "27.8",
-          TRUE ~ table$sensorglucose
-        ))
-      )
-      sensormin=2.2
-      sensormax=28
-    }
-
-    #this get rid of the first lines in dexcom as all these rows miss a timestamp
-    #but also gets rid of any problematic missing rows
-    table <- dplyr::filter(table,!is.na(timestamp))
-
-    # keep only variables of interest
-    vars_to_keep <- dplyr::intersect(names(table), unique(cgm_dict$new_vars))
-
-    table$device<-device_vars$type[1]
-
-    table<-dplyr::select(table,all_of(vars_to_keep))
 
     # we must have approx 4 days of data to run the CHAOS index
     if(length(unique(as.Date(table$timestamp)))<4){
@@ -147,102 +68,77 @@ CHAOSindex <- function(inputdirectory,outputdirectory="output",maxhorizon=90,sav
     #change sensor id to be patient id take from filename
     table$id <- Id
 
-  # handling difficult date times
-  #  date_parts <- stringr::str_extract(table$timestamp[1], "(?<=-)[^- ]{4}(?= )")
-
-
-    if(is.character(table$timestamp)){
-      table$timestamp <-as.POSIXct(lubridate::parse_date_time(table$timestamp, orders = c("dmy HMS","dmy HM","mdy HMS","mdy HM")),tz="UTC")
-      table$timestamp <-anytime::anytime(table$timestamp, tz = "UTC")
-
-    } else if(!is.character(table$timestamp)){
-      table$timestamp <-anytime::anytime(table$timestamp, tz = "UTC")
-    }
-
-    #make sure glucose is numeric
-    table$sensorglucose <-
-      base::suppressWarnings(base::round(base::as.numeric(table$sensorglucose), digits = 2))
-
     #order by timestamp
     table <- table[base::order(table$timestamp), ]
 
-    # ensure order of the variables
-    table <- table[, c("device", "id", "timestamp","sensorglucose")]
-
-    #we round the dates to the nearest 60 seconds for consistencey ie so we dont have to the nearest second
-    table$timestamp<-lubridate::round_date(table$timestamp,unit="60 seconds")
-
-    # we first need to make the data on a standardised time scale
-    table$timestamp<-lubridate::round_date(table$timestamp,unit="5 minutes")
-
-
-# gap imputation below: also libre imputation to 5 min data
-    if (grepl("libre",device_vars$type[1])) {
-      #freestyle libre has 15 min gaps
-    #we fill in the time gaps for every 5 min - this shouldn't effect the result of CHAOS index
-      table<-forecastML::fill_gaps(table, date_col = 3, frequency="5 min", groups = NULL, static_features = NULL) %>%
-      fill(1:2, .direction = "updown")
-
-    # we impute sensor glucose in these gaps. Any gaps that are greater than 6 (6*15=30mins) are not imputed,
-      # ie. we leave glucose as missing
-      table<-imputeTS::na_kalman(table, model="StructTS",smooth = T,maxgap = 6) %>%
-        dplyr::mutate(across(sensorglucose, \(x) round(x, digits = 1)))
-
-
-    }else if(grepl("dexcom",device_vars$type[1])) {
-
-      #we fill in any gaps where there has been dropout
-      table<-forecastML::fill_gaps(table, date_col = 3, frequency="5 min", groups = NULL, static_features = NULL) %>%
-        fill(1:2, .direction = "updown")
-
-      # we impute sensor glucose in these gaps. Any gaps that are greater than 25 (5*6=30mins) are not imputed,
-      # ie. we leave glucose as missing here
-      table<-imputeTS::na_kalman(table, model="StructTS",smooth = T,maxgap = 6) %>%
-        dplyr::mutate(across(sensorglucose, \(x) round(x, digits = 1)))
-
-    }
-
-
     # plot a graph of this persons data to get an overview- overlay dates.
 
-    graph1<-table %>%
-      mutate(date=as.Date(timestamp)) %>%
-      mutate(time=hms::as_hms(timestamp)) %>%
-      ggplot(aes(x = as.POSIXct(time, format = "%H:%M:%S"), y = sensorglucose)) +
-      geom_path(aes(group=as.factor(date),colour=as.factor(date)), colour="grey")+
+    # find what the interval in the data is ie. 5min for dexcom 15 min for libre
+    interval <- pracma::Mode(base::diff(base::as.numeric(table$timestamp) / 60))
+
+    data <- table %>%
+      dplyr::mutate(date = as.Date(timestamp)) %>%
+      dplyr::mutate(time = hms::as_hms(timestamp))
+
+    summary_table<-data %>%
+      dplyr::mutate(date = as.Date(timestamp)) %>%
+      dplyr::mutate(time = hms::as_hms(timestamp)) %>%
+      dplyr::mutate(test=hms::round_hms(time, secs = interval*60))
+
+    graph1<- ggplot2::ggplot(data = data, ggplot2::aes(x = as.POSIXct(time, format = "%H:%M:%S"), y = as.numeric(sensorglucose))) +
+      ggplot2::geom_path(ggplot2::aes(group = interaction(as.factor(date), id), colour = as.factor(date)), colour = "grey") +
       labs(x = "Time", y = "Glucose", title=paste("Summary of CGM wear over:",length(unique(as.Date(table$timestamp))),"days")) +
-      theme_minimal() +
-      scale_x_datetime(date_labels = "%H:%M", date_breaks = "2 hours") +
-      stat_summary(aes(fill = "Median hilow"),fun.data = median_hilow, geom = "ribbon",alpha = 0.5, colour = "darkblue", show.legend = T)+
-      stat_summary(aes(fill = "IQR"),fun.data = function(x) {
-        y <- quantile(x, c(0.25, 0.75))
+      ggplot2::theme_minimal() +
+      ggplot2::scale_x_datetime(date_labels = "%H:%M", date_breaks = "2 hours") +
+      # median hi low and IQR could be the same as each other...
+      ggplot2::stat_summary(data = summary_table,ggplot2::aes(x = as.POSIXct(test, format = "%H:%M:%S"), y = as.numeric(sensorglucose),fill = "10-90th Centile"),colour="transparent", fun.data = function(x) {
+        y <- stats::quantile(x, c(0.1, 0.9))
         names(y) <- c("ymin", "ymax")
         y
-      }, geom = "ribbon", colour = "lightblue", alpha = 0.5,show.legend = T) +
-      theme(
-        legend.position = c(0.85, 0.9),  # Adjust the position of the legend box (top-right corner)
-        legend.background = element_rect(fill = "white", color = "black"),  # Customize the legend box
-        legend.key.size = unit(0.5, "cm"),  # Adjust the size of the legend keys
-        legend.text = element_text(size = 10),  # Adjust the size of the legend text
-        legend.title = element_text(size = 12, face = "bold")  # Adjust the size and style of the legend title
+      }, geom = "ribbon", alpha = 0.5, show.legend = T) +
+      ggplot2::stat_summary(data = summary_table,ggplot2::aes(x = as.POSIXct(test, format = "%H:%M:%S"), y = as.numeric(sensorglucose),fill = "25-75th Centile"),colour="transparent", fun.data = function(x) {
+        y <- stats::quantile(x, c(0.25, 0.75))
+        names(y) <- c("ymin", "ymax")
+        y
+      }, geom = "ribbon", alpha = 0.5, show.legend = T) +
+      ggplot2::stat_summary(data = summary_table,ggplot2::aes(x = as.POSIXct(test, format = "%H:%M:%S"), y = as.numeric(sensorglucose),fill = "Median"),colour="transparent", fun.data = function(x) {
+        y <- stats::quantile(x, c(0.5, 0.5))
+        names(y) <- c("ymin", "ymax")
+        y
+      }, geom = "ribbon", alpha = 0.5, show.legend = T) +
+      ggplot2::stat_summary(data = summary_table,ggplot2::aes(x = as.POSIXct(test, format = "%H:%M:%S"), y = as.numeric(sensorglucose)), fun = "median", geom = "line", alpha = 0.5, colour = "orange",linewidth=1, show.legend = F) +
+      ggplot2::theme(
+        legend.position = c(0.85, 0.9), # Adjust the position of the legend box (top-right corner)
+        legend.background = ggplot2::element_rect(fill = "white", color = "black"), # Customize the legend box
+        legend.key.size = ggplot2::unit(0.5, "cm"), # Adjust the size of the legend keys
+        legend.text = ggplot2::element_text(size = 10), # Adjust the size of the legend text
+        legend.title = ggplot2::element_text(size = 12, face = "bold") # Adjust the size and style of the legend title
       ) +
-      scale_fill_manual("Key",values = c("lightblue","darkblue")) +
-      scale_y_continuous(limits = c(2,(sensormax)),breaks=c(seq(2,sensormax,2)))
+      ggplot2::scale_fill_manual("Key", values = c("lightblue", "darkblue","orange"),aesthetics = c("fill")) +
+      ggplot2::scale_y_continuous(limits = c(2, 24), breaks = c(seq(2, 24, 2)))
 
 
-# data is now clean to move onto the next step. If there were gaps >30 mins these gaps will not have been imputed due to too much inaccuracy
+# data is now clean to move onto the next step. If there were gaps >20 mins these gaps will not have been imputed due to too much inaccuracy
     # for generating CHAOS we want to select days from the persons CGM that has complete glucose
     #so it doesnt matter if one day has lots of large time gaps, we wouldnt select this in impuation
     # we need a minimum of 4 **full** days to train and test the data on
 
-# step 2: select days that have no missing glucose after this imputation ie. remove days that had big gaps
+
+# if it is 15min data pseudo code it to be "5 min" data ie. just repeat the rows
+    if(interval>5){
+      table<-slice(table,rep(1:n(), each = interval/5))
+    }
+
+# step 2: select days that have no missing glucose after the imputation from cleanCGM ie. remove days that had big gaps
     BDataCGM <- table %>%
-    mutate(date=as.Date(timestamp)) %>%
-      group_by(date) %>%
-      mutate(removeifmissing=mean(sensorglucose,na.rm = F)) %>%
-      ungroup() %>%
-      filter(!is.na(removeifmissing)) %>% # we use sensorreadings number to avoid selecting half days at start/end of sensor
-      select(-c(date,removeifmissing))
+    mutate(diff=abs(difftime(timestamp,lead(timestamp), units = "mins"))) %>%
+    mutate(diff=ifelse(is.na(diff),0,diff)) %>%
+    mutate(biggap=ifelse(diff>20,1,NA))  %>%
+    group_by(date) %>%
+    fill(biggap,.direction = "updown")  %>%
+    ungroup() %>%
+    filter(!is.na(biggap)) %>% # we use sensorreadings number to avoid selecting half days at start/end of sensor
+    select(-c(biggap,diff))
 
 if (nrow(BDataCGM) == 0) {
       stop(paste("No dates in file without gaps in time.
@@ -251,22 +147,25 @@ if (nrow(BDataCGM) == 0) {
       Go back and check your data. Exclude ID if neccessary.
       The file that generated this error is: ",Id))
       next
+}
+
+    if (length(unique(as.Date(BDataCGM$timestamp))) < 4) {
+      stop(paste("Less than 4 days in file without gaps in time. Minimum of 4 days required for CHAOS Index.
+      After cleaning, it was identified that there is not enough useable data.
+      It is likely many days have large time gaps that were unable to be imputed.
+      Go back and check your data. Exclude ID if neccessary.
+      The file that generated this error is: ",Id))
+      next
     }
 
-# make the date and time separate - it doesnt matter what the date is now for this step
-    # put missing placeholders for the missing dates to determine if consecutive
-BDataCGM<-BDataCGM %>%
-  mutate(DeviceDaysFromEnroll=as.Date(timestamp)) %>%
-   mutate(DeviceTm =format(timestamp, format = "%H:%M:%S")) %>%
-   forecastML::fill_gaps(date_col = 3, frequency="5 min", groups = NULL, static_features = NULL)
 
-# development? : what if we have months within the same download? a: Split the data frame into consecutive 14-day periods?
-#
-# split_df <- split(BDataCGM, cut(BDataCGM$DeviceDaysFromEnroll, "14 days"))
+#now check for missing dates
+    BDataCGM <- BDataCGM %>%
+      mutate(consecutive = cumsum(c(1, diff(as.Date(date)) > 1)))
+
 
 # Find the unique consecutive date sequences
-consecutive_dates <- rle(!is.na(BDataCGM$sensorglucose))
-
+consecutive_dates <- rle(BDataCGM$consecutive)
 
 # there are 288 indexes (5mins) in 24hours.
 # we train on 3 days = 864
@@ -276,9 +175,9 @@ consecutive_dates <- rle(!is.na(BDataCGM$sensorglucose))
 
 valid_sequences <- which(consecutive_dates$lengths >= 864 + (maxhorizon/5))
 
+
 # Check if there are enough valid sequences
 n_valid_sequences <- length(valid_sequences)
-
 
 if (n_valid_sequences == 0) {
   stop(paste("No valid sequences with at least",864 + (maxhorizon/5),"timeseries values found.\n
@@ -290,15 +189,17 @@ if (n_valid_sequences == 0) {
   next
 }
 
-# Select a random valid sequence
-random_sequence_index <- sample(valid_sequences, 1)
+# if more than one valid sequence to run on Select a random valid sequence
+random_sequence_index <- unlist(sample(list(valid_sequences), 1,replace = T))
+
+positions<-c(0,cumsum(consecutive_dates$lengths))
 
 if(random_sequence_index==1){
 start_index<-1
-end_index <- start_index + consecutive_dates$lengths[random_sequence_index] - 1
+end_index <- start_index + (positions[random_sequence_index])
 }else if(random_sequence_index!=1){
-start_index <- sum(consecutive_dates$lengths[1:(random_sequence_index - 1)]) + 1
-end_index <- start_index + consecutive_dates$lengths[random_sequence_index] - 1
+start_index <- positions[random_sequence_index] + 1
+end_index <-positions[random_sequence_index+1]
   }
 
 # Extract the window from the time series
@@ -311,7 +212,9 @@ random_start <- sample(1:(nrow(window) - (864 + (maxhorizon/5))), 1)
 # Calculate the end index
 random_end <- random_start + (864 + (maxhorizon/5)-1)
 
-random_window_final<-window[random_start:random_end,]
+random_window_final<-window[random_start:random_end,] %>%
+  select(-consecutive)
+
 
 
 #step 3: Generating index
@@ -324,8 +227,6 @@ BDataCGM_predict <- random_window_final[1:864,]
 
 BDataCGM_forcast <- random_window_final[1:(864 + (maxhorizon/5)),]
 
-
-
 #UPDATE: use an seasonal arima model to learn on the X days of data
 # i think the auto model was doing this anyway? however it important to specify?
 # we need to specify seasonal as there may be different patterns in the night and day
@@ -337,9 +238,9 @@ sarima_model <- forecast::auto.arima(BDataCGM_predict$sensorglucose, seasonal = 
 # Generate future positions
 # Make predictions for the desired time window using the auto.arima model
 
-predictions_maxhorizon <- forecast(sarima_model, h = maxhorizon/5)
+predictions_maxhorizon <-  forecast::forecast(sarima_model, h = maxhorizon/5)
 
-predictions_30min <- forecast(sarima_model, h = 6)
+predictions_30min <-  forecast::forecast(sarima_model, h = 6)
 
 # Extract the predicted values for the desired time window
 prediction_window_maxhorizon<-random_window_final[865:(864+(maxhorizon/5)),]$timestamp
@@ -409,7 +310,7 @@ modelsummaryparms[[f]]<-modelsummary
 # zoom on prediction
 
 graph2<- ggplot() +
-  geom_rect(data = BDataCGM_forcast,aes(xmin=BDataCGM_forcast[865,]$timestamp,xmax=BDataCGM_forcast[(864+(maxhorizon/5)),]$timestamp,ymin=2,ymax=sensormax,fill="Window to predict"),alpha=0.5)+
+  geom_rect(data = BDataCGM_forcast,aes(xmin=BDataCGM_forcast[865,]$timestamp,xmax=BDataCGM_forcast[(864+(maxhorizon/5)),]$timestamp,ymin=2,ymax=24,fill="Window to predict"),alpha=0.5)+
   geom_path(data=BDataCGM_forcast,aes(x =timestamp, y = sensorglucose)) +
   labs(x = "Time", y = "Glucose",title="Patients real glucose trace used in ARIMA forcast") +
   theme_minimal() +
@@ -420,7 +321,7 @@ graph2<- ggplot() +
     legend.text = element_text(size = 10),  # Adjust the size of the legend text
     legend.title = element_text(size = 12, face = "bold")  # Adjust the size and style of the legend title
   ) +
-  scale_y_continuous(limits = c(2,(sensormax)),breaks=c(seq(2,sensormax,2))) +
+  scale_y_continuous(limits = c(2,24),breaks=c(seq(2,24,2))) +
   scale_fill_manual("Key",values = c("indianred"))
 
   graph3<- ggplot() +
