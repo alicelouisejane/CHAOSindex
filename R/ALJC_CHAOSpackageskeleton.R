@@ -383,15 +383,15 @@ if(saveplot==T){
   }
 
 output_params<-dplyr::bind_rows(modelsummaryparms[!is.null(modelsummaryparms)])
-rio::export(output_params,paste0(outputdirectory,Id,"_modeloutputparams.csv"))
+rio::export(output_params,paste0(outputdirectory,"modeloutputparams.csv"))
 
 output_prediction_maximumhorizon<-dplyr::bind_rows(predictionmaxhorizon_output[!is.null(predictionmaxhorizon_output)])
-rio::export(output_prediction_maximumhorizon,paste0(outputdirectory,Id,"_predictionsmaximumhorizon.csv"))
+rio::export(output_prediction_maximumhorizon,paste0(outputdirectory,"predictionsmaximumhorizon.csv"))
 
 output_prediction_30mins<-dplyr::bind_rows(prediction30_output[!is.null(prediction30_output)])
-rio::export(output_prediction_30mins,paste0(outputdirectory,Id,"_predictions30mins.csv"))
+rio::export(output_prediction_30mins,paste0(outputdirectory,"predictions30mins.csv"))
 
 output_mape<-dplyr::bind_rows(MAPE_output[!is.null(MAPE_output)])
-rio::export(output_mape,paste0(outputdirectory,Id,"_mape.csv"))
+rio::export(output_mape,paste0(outputdirectory,"mape.csv"))
 
 }
