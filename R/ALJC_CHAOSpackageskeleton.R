@@ -195,7 +195,7 @@ if (n_valid_sequences == 0) {
 
 # if more than one valid sequence to run on Select a random valid sequence
 random_sequence_index <- unlist(sample(valid_sequences, 1, replace = TRUE))
-random_sequence_index<-7
+
 positions<-c(0,cumsum(consecutive_dates$lengths))
 
 if(length(valid_sequences)==1){
