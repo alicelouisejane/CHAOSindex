@@ -29,7 +29,7 @@ Returns PDF of CGM traces and modelling prediction windows as well as csv files 
 as well as the chosen maximum prediction horizon (default to 90 min). Also outputs the file of the real values and predicted values from this prediction for 30 mins and the chosen maximum horizon.
 }
 \description{
-This function Enables generation of the CHAOS index from CGM data. CGM data must be cleaned and in the format as described in the README also see cleanCGM from the CGMprocessing package.
+This function Enables generation of the CHAOS index from CGM data. CGM data must be cleaned and in the format as described in the README also see [CGMprocessing::cleanCGM()].
 This is an concept index in development at the University of Alberta and University of Cardiff being trialed to rapidly and effectively identify and monitor high risk individuals with
 Type 1 diabetes requiring advanced treatment. This package is in development.
 }
