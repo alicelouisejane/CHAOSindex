@@ -41,7 +41,6 @@
 #' @seealso
 #' CGMprocessing cleanCGM
 
-
 CHAOSindex <- function(inputdirectory,outputdirectory="output",aggregated=F,maxhorizon=90,saveplot=T) {
   #define lists to store outputs
   prediction30_output<-list()
@@ -143,6 +142,7 @@ CHAOSindex <- function(inputdirectory,outputdirectory="output",aggregated=F,maxh
 # if it is 15min data pseudo code it to be "5 min" data ie. just repeat the rows
     if(interval>5){
       table<-slice(table,rep(1:n(), each = interval/5))
+      warning(paste("15 min interval data. Pseudo imputing to 5 min data through repitition."))
     }
 
 # step 2: select days that have no missing glucose after the imputation from cleanCGM ie. remove days that had big gaps
@@ -189,8 +189,7 @@ consecutive_dates <- rle(BDataCGM$consecutive)
 # we also want to predict up to the maxhorizon, default to 90,
 # so need to compare to 18 further indexes = 882
 
-valid_sequences <- which(consecutive_dates$lengths >= 864 + (maxhorizon/5))
-
+valid_sequences <- as.list(which(consecutive_dates$lengths >= 864 + (maxhorizon/5)))
 
 # Check if there are enough valid sequences
 n_valid_sequences <- length(valid_sequences)
@@ -206,17 +205,17 @@ if (n_valid_sequences == 0) {
 }
 
 # if more than one valid sequence to run on Select a random valid sequence
-random_sequence_index <- unlist(sample(valid_sequences, 1, replace = TRUE))
+random_sequence_index <- unlist(sample(as.list(valid_sequences), 1, replace = TRUE))
 
 positions<-c(0,cumsum(consecutive_dates$lengths))
 
-if(length(valid_sequences)==1){
+if(length(consecutive_dates$values)==1){
 start_index<-1
-end_index <- start_index + (positions[random_sequence_index])
-}else if(length(valid_sequences)!=1){
-start_index <- positions[random_sequence_index] + 1
+end_index <- consecutive_dates$lengths
+}else if(length(consecutive_dates$values)>1){
+start_index<-positions[random_sequence_index] + 1
 end_index <-positions[random_sequence_index+1]
-  }
+}
 
 # Extract the window from the time series
 window <- BDataCGM[start_index:end_index,]
