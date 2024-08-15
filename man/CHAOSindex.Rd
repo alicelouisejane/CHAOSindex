@@ -13,7 +13,7 @@ CHAOSindex(
 )
 }
 \arguments{
-\item{inputdirectory}{path to folder containing raw files. If data is pre-aggregated then use the full file path including file name of this file.
+\item{inputdirectory}{path to folder containing cleaned files. If data is pre-aggregated then use the full file path including file name of this file.
 Preferred csv format but can read in others.}
 
 \item{outputdirectory}{path to folder where output files will be stored}
@@ -26,7 +26,7 @@ Preferred csv format but can read in others.}
 }
 \value{
 Returns PDF of CGM traces and modelling prediction windows as well as csv files of the ARMIA model "accuracy" parameters, the Mean Absolute Percentage Errors (MAPE) for a 30 minute prediction window
-as well as the chosen maximum prediction horizon (default to 90 min). Also outputs the full file of the real values and predicted values from this prediction for 30 mins and the chosen maximum horizon.
+as well as the chosen maximum prediction horizon (default to 90 min). Also outputs the file of the real values and predicted values from this prediction for 30 mins and the chosen maximum horizon.
 }
 \description{
 This function Enables generation of the CHAOS index from CGM data. CGM data must be cleaned and in the format as described in the README also see cleanCGM from the CGMprocessing package.

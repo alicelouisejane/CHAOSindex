@@ -5,9 +5,9 @@
 #' Type 1 diabetes requiring advanced treatment. This package is in development.
 #'
 #' @returns Returns PDF of CGM traces and modelling prediction windows as well as csv files of the ARMIA model "accuracy" parameters, the Mean Absolute Percentage Errors (MAPE) for a 30 minute prediction window
-#' as well as the chosen maximum prediction horizon (default to 90 min). Also outputs the full file of the real values and predicted values from this prediction for 30 mins and the chosen maximum horizon.
+#' as well as the chosen maximum prediction horizon (default to 90 min). Also outputs the file of the real values and predicted values from this prediction for 30 mins and the chosen maximum horizon.
 #'
-#' @param inputdirectory path to folder containing raw files. If data is pre-aggregated then use the full file path including file name of this file.
+#' @param inputdirectory path to folder containing cleaned files. If data is pre-aggregated then use the full file path including file name of this file.
 #' Preferred csv format but can read in others.
 #'
 #' @param aggregated TRUE/FALSE dictates if data is pre-aggregated or in individual separate files (usual for clinical trials)
@@ -41,6 +41,7 @@
 #' @seealso
 #' CGMprocessing cleanCGM
 
+
 CHAOSindex <- function(inputdirectory,outputdirectory="output",aggregated=F,maxhorizon=90,saveplot=T) {
   #define lists to store outputs
   prediction30_output<-list()
@@ -48,20 +49,31 @@ CHAOSindex <- function(inputdirectory,outputdirectory="output",aggregated=F,maxh
   MAPE_output<-list()
   modelsummaryparms<-list()
 
-
-  # Read in data: anticipated structure is a file containing clean CGM downloads
-  files <- base::list.files(path = inputdirectory, full.names = TRUE)
-
   # output directory is created
   base::dir.create(outputdirectory, showWarnings = FALSE)
+
+  if(aggregated==F){
+  # Read in data: anticipated structure is a file containing clean CGM downloads
+  files <- base::list.files(path = inputdirectory, full.names = TRUE)
+  }else if(aggregated==T){
+    table_test<-rio::import(inputdirectory)
+    files<-split(table_test,table_test$id)
+  }
 
 # Step 1: read in the CGM data, ensure time gaps imputed
   for (f in 1:base::length(files)) {
 
+    if(aggregated==F){
     #id from filename
     Id <- tools::file_path_sans_ext(basename(files[f]))
-
+    print(Id)
     table <-  base::suppressWarnings(rio::import(files[f], guess_max = 10000000))
+    }else if(aggregated==T){
+      table <-  files[[f]]
+    Id <- unique(table$id)
+    table <- unique(table)
+    print(Id)
+    }
 
     # we must have approx 4 days of data to run the CHAOS index
     if(length(unique(as.Date(table$timestamp)))<4){
