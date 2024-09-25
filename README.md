@@ -78,7 +78,7 @@ including:
 <tr class="header">
 <th>Metric</th>
 <th>Definition</th>
-<th>Suggested in International Consensus for CGM</th>
+<th>Suggested in International \n Consensus for CGM</th>
 </tr>
 </thead>
 <tbody>
@@ -107,7 +107,7 @@ glucose will have a higher SD.</td>
 all glycemic excursions exceeding the threshold (standard deviation of
 blood glucose obtained from all blood glucose concentrations within
 24-hour period). Option to asses average of the differences greater than
-either entire dataset SD, 2SD, etc</td>
+either  entire dataset SD, 2SD, etc</td>
 <td>Yes</td>
 </tr>
 <tr class="odd">
@@ -120,7 +120,7 @@ combination of information from the mean and SD calculated as 0.001 ×
 <tr class="even">
 <td>Continuous overlapping net glycemic action</td>
 <td>CONGA (n), where n indicate number of hours being assessed (ie. 1 =1
-hour), CONGA(n) represents the SD of all valid differences between a
+hour),  CONGA(n) represents the SD of all valid differences between a
 current observation and an observation (n) hours earlier. <a
 href="doi:10.1089/dia.2005.7.253"
 class="uri">doi:10.1089/dia.2005.7.253</a></td>
@@ -136,7 +136,7 @@ glucose values at corresponding time points of consecutive days. Doi:
 </tr>
 <tr class="even">
 <td>Glycemic Variability Percentage</td>
-<td>Defined as ((L / L0) - 1) * 100. Where L is given by the summation
+<td>Defined as  ((L / L0) - 1) * 100Where L  is given by the summation
 over all n line elements based on decomposition into horizontal (Dx) and
 vertical (Dy) components and application of the Py- thagorean theorem.
 And L0 is ideal line length L0 for a given temporal duration.  The
