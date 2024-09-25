@@ -68,7 +68,94 @@ aggregated=T.❗
 There are multiple validated measures of variability based on CGM
 including:
 
-**insert table**
+<table>
+<colgroup>
+<col style="width: 47%" />
+<col style="width: 31%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Metric</th>
+<th>Definition</th>
+<th>Suggested in International Consensus for Continuous Glucose
+monitoring</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Standard deviation</td>
+<td>Standard deviation of sensor glucose</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>Coefficient of Variation</td>
+<td>The CV divides the SD/mean x100. This division helps “correct” and
+normalize glucose variability, allowing us to set a single variability
+goal that applies to people with different mean glucose levels as SD is
+highly influenced by the mean glucose – someone with a higher mean
+glucose will have a higher SD.</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>Total AUC</td>
+<td>Total area under the glucose curve</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>Mean Amplitude Glycemic Excursion</td>
+<td>MAGE is an arithmetic average of either the upward or downward of
+all glycemic excursions exceeding the threshold (standard deviation of
+blood glucose obtained from all blood glucose concentrations within
+24-hour period). Option to asses average of the differences greater than
+either  entire dataset SD, 2SD, etc</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>J index</td>
+<td>J index is a measure of quality of glycemic control based on the
+combination of information from the mean and SD calculated as 0.001 ×
+(mean + SD) doi: 10.1055/s-2007-979906.</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>Continuous overlapping net glycemic action</td>
+<td>CONGA (n), where n indicate number of hours being assessed (ie. 1 =1
+hour),  CONGA(n) represents the SD of all valid differences between a
+current observation and an observation (n) hours earlier. <a
+href="doi:10.1089/dia.2005.7.253"
+class="uri">doi:10.1089/dia.2005.7.253</a></td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>The mean of daily differences</td>
+<td>MODD index provides an estimation of interday glycemic variability.
+This parameter is calculated as the mean of absolute differences between
+glucose values at corresponding time points of consecutive days. Doi:
+10.1007/BF01218495</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>Glycemic Variability Percentage</td>
+<td>Defined as  ((L / L0) - 1) * 100</td>
+<td><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5846572">No –
+developed after the first consensus, Published and demonstrated its
+action by [Peyser
+2018](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5846572)</a></td>
+</tr>
+<tr class="odd">
+<td>Where L  is given by the summation over all n line elements based on
+decomposition into horizontal (Dx) and vertical (Dy) components and
+application of the Py- thagorean theorem. And L0 is ideal line length L0
+for a given temporal duration.  The length of the CGM temporal trace
+over a given interval of time depends on the degree of glycemic
+variability: temporal traces with high glycemic variability have greater
+lengths than traces with low glycemic variability.</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 
 There may also be other possible ways to better identify variability of
 an individuals glucose, which better relate to the **unpredictability**
