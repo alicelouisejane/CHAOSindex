@@ -1,7 +1,7 @@
 Package: CHAOSindex
 Type: Package
 Title: Generating a CHAOS index for type 1 diabetes
-Version: 1.0.0
+Version: 2.0.0
 Author: Alice Carr PhD, Peter Taylor MD, Steph Hanna PhD
 Maintainer: Email package maintainer <acarr1@ualberta.ca>
 Description: New metrics from non-invasive tools to more rapidly and effectively identify and monitor high risk individuals with Type 1 diabetes requiring advanced treatment.
@@ -18,7 +18,9 @@ Imports:
     tidyr,
     rio,
     hms,
-    pracma
+    pracma,
+    pastecs,
+    zoo
 License: CC-BY-NC-SA-4.0
 Encoding: UTF-8
 LazyData: true

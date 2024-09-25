@@ -1,6 +1,6 @@
 #' @title CHAOSindex
 #'
-#' @description This function Enables generation of the CHAOS index from CGM data. CGM data must be cleaned and in the format as described in the README also see [CGMprocessing::cleanCGM()].
+#' @description This function enables generation of the CHAOS index from CGM data. CGM data must be cleaned and in the format as described in the README also see [CGMprocessing::cleanCGM()].
 #'This is an concept index in development at the University of Alberta and University of Cardiff being trialed to rapidly and effectively identify and monitor high risk individuals with
 #' Type 1 diabetes requiring advanced treatment. This package is in development.
 #'
@@ -41,7 +41,17 @@
 #' @seealso
 #' CGMprocessing cleanCGM
 
-CHAOSindex <- function(inputdirectory,outputdirectory="output",aggregated=F,maxhorizon=90,saveplot=T) {
+inputdirectory<-"/Users/alicecarr/Desktop/UofA/Clincal transplant program/CGM in ITx/data-split/"
+outputdirectory<-"/Users/alicecarr/Desktop/UofA/Clincal transplant program/CGM in ITx/"
+aggregated=F
+maxhorizon=90
+saveplot=T
+
+CHAOSindex <- function(inputdirectory,
+                       outputdirectory="output",
+                       aggregated=F,
+                       maxhorizon=90,
+                       saveplot=T) {
   #define lists to store outputs
   prediction30_output<-list()
   predictionmaxhorizon_output<-list()
@@ -142,7 +152,7 @@ CHAOSindex <- function(inputdirectory,outputdirectory="output",aggregated=F,maxh
 # if it is 15min data pseudo code it to be "5 min" data ie. just repeat the rows
     if(interval>5){
       table<-slice(table,rep(1:n(), each = interval/5))
-      warning(paste("15 min interval data. Pseudo imputing to 5 min data through repitition."))
+      print(paste("15 min interval data. Pseudo imputing to 5 min data through repitition."))
     }
 
 # step 2: select days that have no missing glucose after the imputation from cleanCGM ie. remove days that had big gaps
@@ -157,7 +167,7 @@ CHAOSindex <- function(inputdirectory,outputdirectory="output",aggregated=F,maxh
     dplyr::select(-c(biggap,diff))
 
 if (nrow(BDataCGM) == 0) {
-      stop(paste("No dates in file without gaps in time.
+      print(paste("No dates in file without gaps in time.
       After cleaning, it was identified that there is not enough useable data.
       It is likely many days have large time gaps that were unable to be imputed.
       Go back and check your data. Exclude ID if neccessary.
@@ -166,7 +176,7 @@ if (nrow(BDataCGM) == 0) {
 }
 
     if (length(unique(as.Date(BDataCGM$timestamp))) < 4) {
-      stop(paste("Less than 4 days in file without gaps in time. Minimum of 4 days required for CHAOS Index.
+      print(paste("Less than 4 days in file without gaps in time. Minimum of 4 days required for CHAOS Index.
       After cleaning, it was identified that there is not enough useable data.
       It is likely many days have large time gaps that were unable to be imputed.
       Go back and check your data. Exclude ID if neccessary.
@@ -195,7 +205,7 @@ valid_sequences <- as.list(which(consecutive_dates$lengths >= 864 + (maxhorizon/
 n_valid_sequences <- length(valid_sequences)
 
 if (n_valid_sequences == 0) {
-  stop(paste("No valid sequences with at least",864 + (maxhorizon/5),"timeseries values found.\n
+  print(paste("No valid sequences with at least",864 + (maxhorizon/5),"timeseries values found.\n
        There must be",864 + (maxhorizon/5) ,"consecutive indexes of data to run the CHAOS index ~ 3days + maxhorizon:", maxhorizon,"mins.
        After cleaning, it was identified that there is not enough useable data.
        It is likely many days have large time gaps that were unable to be imputed.
