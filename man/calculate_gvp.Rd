@@ -35,7 +35,7 @@ of all valid differences between a current observation and an observation (n) ho
 Returns a csv files of GVP for each individual.
 }
 \description{
-This function enables generation Glycemic Variability Percentage (GVP) from CGM data. CGM data must be cleaned and in the format as described in the README also see [CGMprocessing::cleanCGM()].
+This function enables generation Glycemic Variability Percentage (GVP) from CGM data. CGM data must be cleaned and in the format as described in the README also see \code{\link[CGMprocessing:cleanCGM]{CGMprocessing::cleanCGM()}}.
 This is based on the logic from Peyser 2018. The length of the CGM temporal trace over a given interval of time depends on the degree of glycemic variability: temporal traces with high glycemic variability
 have greater lengths than traces with low glycemic variability.
 Mathematically, this is similar to the problem posed by Mandelbrot regarding the proper measurement of the coastline of Great Britain or other coastal areas with a high degree of tortuosity.

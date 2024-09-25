@@ -309,7 +309,7 @@ this “index” would be required.
 #### <a id="CHAOSindexoutput"></a> CHAOSindex output
 
 <figure>
-<img src="man/figures/example%20combinedplot_output.png"
+<img src="man/figures/example_combinedplot_output.png"
 alt="Summary output of CGM traces and CHAOS predictions" />
 <figcaption aria-hidden="true">Summary output of CGM traces and CHAOS
 predictions</figcaption>
@@ -372,7 +372,7 @@ requires the use of **mg/dl**❗
 #### <a id="gvpoutput"></a> calculate\_gvp output
 
 <figure>
-<img src="man/figures/example%20gvp_output.png"
+<img src="man/figures/example_gvp_output.png"
 alt="Summary output of CGM traces and GVP calculations" />
 <figcaption aria-hidden="true">Summary output of CGM traces and GVP
 calculations</figcaption>

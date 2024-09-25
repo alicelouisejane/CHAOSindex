@@ -1,7 +1,7 @@
 #' @title CHAOSindex
 #'
 #' @description This function enables generation of the CHAOS index from CGM data. CGM data must be cleaned and in the format as described in the README also see [CGMprocessing::cleanCGM()].
-#'This is an concept index in development at the University of Alberta and University of Cardiff being trialed to rapidly and effectively identify and monitor high risk individuals with
+#' This is an concept index in development at the University of Alberta and University of Cardiff being trialed to rapidly and effectively identify and monitor high risk individuals with
 #' Type 1 diabetes requiring advanced treatment. This package is in development.
 #'
 #' @returns Returns PDF of CGM traces and modelling prediction windows as well as csv files of the ARMIA model "accuracy" parameters, the Mean Absolute Percentage Errors (MAPE) for a 30 minute prediction window
@@ -40,12 +40,6 @@
 #' @export
 #' @seealso
 #' CGMprocessing cleanCGM
-
-inputdirectory<-"/Users/alicecarr/Desktop/UofA/Clincal transplant program/CGM in ITx/data-split/"
-outputdirectory<-"/Users/alicecarr/Desktop/UofA/Clincal transplant program/CGM in ITx/"
-aggregated=F
-maxhorizon=90
-saveplot=T
 
 CHAOSindex <- function(inputdirectory,
                        outputdirectory="output",

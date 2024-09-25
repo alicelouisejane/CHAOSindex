@@ -17,7 +17,7 @@
 #' concentrations within 24-hour period). Default is 1 standarddevation ("1sd"), options are 1.5 SD ("1.5sd") , 2 SD ("2sd")
 #' or other can be specifed as a numeric
 #'
-#'@param congan Specificing the n number of hours in CONGA(n). Default is the numeric 1. CONGA(n) represents the SD
+#' @param congan Specificing the n number of hours in CONGA(n). Default is the numeric 1. CONGA(n) represents the SD
 #' of all valid differences between a current observation and an observation (n) hours earlier
 #'
 #' @param outputdirectory path to folder where output files will be stored
@@ -32,7 +32,7 @@
 #' @import forecast
 #' @import anytime
 #' @import lubridate
-#' @import zoo
+#' @importFrom zoo rollapply zoo
 #' @import pastecs
 #' @import Hmisc
 #' @importFrom cowplot plot_grid ggdraw draw_label
