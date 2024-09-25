@@ -68,17 +68,17 @@ aggregated=T.❗
 There are multiple validated measures of variability based on CGM
 including:
 
-<table>
+<table style="width:100%;">
 <colgroup>
-<col style="width: 5%" />
-<col style="width: 66%" />
-<col style="width: 27%" />
+<col style="width: 7%" />
+<col style="width: 85%" />
+<col style="width: 7%" />
 </colgroup>
 <thead>
 <tr class="header">
 <th>Metric</th>
 <th>Definition</th>
-<th>Suggested in International \n Consensus for CGM</th>
+<th>Suggested in International Consensus for CGM</th>
 </tr>
 </thead>
 <tbody>
@@ -144,10 +144,7 @@ length of the CGM temporal trace over a given interval of time depends
 on the degree of glycemic variability: temporal traces with high
 glycemic variability have greater lengths than traces with low glycemic
 variability.</td>
-<td><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5846572">No –
-developed after the first consensus, Published and demonstrated its
-action by [Peyser
-2018](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5846572)</a></td>
+<td>No – developed after the first consensus</td>
 </tr>
 </tbody>
 </table>
